@@ -28,7 +28,7 @@ plan peadm::action::install (
 
   # Extra Large
   Optional[Peadm::SingleTargetSpec] $primary_postgresql_host         = undef,
-  Optional[Peadm::SingleTargetSpec] $puppetdb_database_replica_host = undef,
+  Optional[Peadm::SingleTargetSpec] $replica_postgresql_host = undef,
 
   # Common Configuration
   String               $console_password,
@@ -55,7 +55,7 @@ plan peadm::action::install (
   $primary_target                   = peadm::get_targets($primary_host, 1)
   $primary_replica_target           = peadm::get_targets($primary_replica_host, 1)
   $primary_postgresql_target         = peadm::get_targets($primary_postgresql_host, 1)
-  $puppetdb_database_replica_target = peadm::get_targets($puppetdb_database_replica_host, 1)
+  $replica_postgresql_target = peadm::get_targets($replica_postgresql_host, 1)
   $compiler_targets                 = peadm::get_targets($compiler_hosts)
 
   # Ensure input valid for a supported architecture
@@ -63,7 +63,7 @@ plan peadm::action::install (
     $primary_host,
     $primary_replica_host,
     $primary_postgresql_host,
-    $puppetdb_database_replica_host,
+    $replica_postgresql_host,
     $compiler_hosts,
   )
 
@@ -71,7 +71,7 @@ plan peadm::action::install (
     $primary_target,
     $primary_postgresql_target,
     $primary_replica_target,
-    $puppetdb_database_replica_target,
+    $replica_postgresql_target,
     $compiler_targets,
   ])
 
@@ -82,13 +82,13 @@ plan peadm::action::install (
 
   $database_targets = peadm::flatten_compact([
     $primary_postgresql_target,
-    $puppetdb_database_replica_target,
+    $replica_postgresql_target,
   ])
 
   $pe_installer_targets = peadm::flatten_compact([
     $primary_target,
     $primary_postgresql_target,
-    $puppetdb_database_replica_target,
+    $replica_postgresql_target,
   ])
 
   $agent_installer_targets = peadm::flatten_compact([
@@ -167,7 +167,7 @@ plan peadm::action::install (
   $puppetdb_database_replica_pe_conf = peadm::generate_pe_conf({
     'console_admin_password'                => 'not used',
     'puppet_enterprise::puppet_master_host' => $primary_target.peadm::certname(),
-    'puppet_enterprise::database_host'      => $puppetdb_database_replica_target.peadm::certname(),
+    'puppet_enterprise::database_host'      => $replica_postgresql_target.peadm::certname(),
   } + $puppetdb_database_temp_config + $pe_conf_data)
 
   # Upload the pe.conf files to the hosts that need them, and ensure correctly
@@ -227,7 +227,7 @@ plan peadm::action::install (
       )
     },
     background('replica-postgresql-csr.yaml') || {
-      run_plan('peadm::util::insert_csr_extension_requests', $puppetdb_database_replica_target,
+      run_plan('peadm::util::insert_csr_extension_requests', $replica_postgresql_target,
         extension_requests => {
           peadm::oid('peadm_role')               => 'puppet/puppetdb-database',
           peadm::oid('peadm_availability_group') => 'B'
