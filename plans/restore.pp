@@ -1,6 +1,6 @@
-# @summary Backup the core user settings for puppet infrastructure
+# @summary Restore the core user settings for puppet infrastructure from backup
 #
-# This plan can backup core user data to allow for DR or rebuilds
+# This plan can restore data to puppet infrastructure for DR and rebuilds
 # 
 plan peadm::backup (
   # Standard
@@ -14,31 +14,23 @@ plan peadm::backup (
   Optional[Peadm::SingleTargetSpec] $primary_postgresql_host = undef,
   Optional[Peadm::SingleTargetSpec] $replica_postgresql_host = undef,
 
-  # Which data to backup
-  Boolean                            $backup_orchestrator    = true,
-  Boolean                            $backup_rbac            = true,
-  Boolean                            $backup_activity        = true,
-  Boolean                            $backup_ca_ssl          = true,
-  Boolean                            $backup_puppetdb        = false,
-  Boolean                            $backup_classification  = true,
-  String                             $output_directory       = '/tmp',
+  # Which data to restore
+  Boolean                            $restore_orchestrator    = true,
+  Boolean                            $restore_rbac            = true,
+  Boolean                            $restore_activity        = true,
+  Boolean                            $restore_ca_ssl          = true,
+  Boolean                            $restore_puppetdb        = false,
+  Boolean                            $restore_classification  = true,
+  String                             $input_directory       = '/tmp',
+  Timestamp                          $backup_timestamp,
 ){
 
-  $timestamp = Timestamp.new().strftime('%F_%T')
-  $backup_directory = "${output_directory}/pe-backup-${timestamp}"
-  # Create backup folder
-  apply_prep($primary_host)
-  apply($primary_host){
-    file { $backup_directory :
-      ensure => 'directory',
-      owner  => 'root',
-      group  => 'pe-postgres',
-      mode   => '0770'
-    }
-  }
+  $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
+  # Check backup exists folder
+
   # Create an array of the names of databases and whether they have to be backed up to use in a lambda later
-  $database_to_backup = [ $backup_orchestrator, $backup_activity, $backup_rbac, $backup_puppetdb]
-  $database_names     = [ 'pe-orchestrator' , 'pe-activity' , 'pe-rbac' , 'pe-puppetdb' ]
+  $database_to_restore = [ $backup_orchestrator, $backup_activity, $backup_rbac, $backup_puppetdb]
+  $database_names      = [ 'pe-orchestrator' , 'pe-activity' , 'pe-rbac' , 'pe-puppetdb' ]
 
   peadm::assert_supported_bolt_version()
 
@@ -51,16 +43,16 @@ plan peadm::backup (
     $compiler_hosts,
   )
 
-  if $backup_classification {
-    out::message('# Backing up classification')
-    run_task('peadm::backup_classification', $primary_host,
-    directory => $backup_directory,
+  if $restore_classification {
+    out::message('# Restoring classification')
+    run_task('peadm::restore_classification', $primary_host,
+    directory => "$backup_directory",
     )
   }
 
   if $backup_ca_ssl {
-    out::message('# Backing up ca and ssl certificates')
-    run_command("/opt/puppetlabs/bin/puppet-backup create --dir=${backup_directory} --scope=certs", $primary_host)
+    out::message('# Restoring ca and ssl certificates')
+    run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/ --scope=certs", $primary_host)
   }
 
   # Check if /etc/puppetlabs/console-services/conf.d/secrets/keys.json exists and if so back it up
