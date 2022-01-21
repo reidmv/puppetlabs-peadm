@@ -75,6 +75,6 @@ peinf_DR = addsubgroups(data_DR,id_DR,peinf_DR)
 # Add the contents of the backup classification without pe inf to the DR pe inf groups
 # and write to a file
 peinf_transformed_groups = data + peinf_DR
-with open('classification_transformed.json', 'w') as fp:
+with open('/var/tmp/classification_transformed.json', 'w') as fp:
     json.dump(peinf_transformed_groups, fp)
     
