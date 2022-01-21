@@ -8,6 +8,10 @@
       "target_classification_file": {
         "type": "String",
         "description": "Location of targe node group yaml file"
+      },
+      "transformed_classification_file": {
+        "type": "String",
+        "description": "Location to create the transformed node group yaml file"
       }
     },
     "input_method": "stdin",
