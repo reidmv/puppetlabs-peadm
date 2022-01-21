@@ -6,6 +6,8 @@ target. Allowing the ability to restore a backup of user node definitions"""
 import json
 import sys
 params = json.load(sys.stdin)
+source_classification_file = params['source_classification_file']
+target_classification_file = params['target_classification_file']
 
 def removesubgroups(data_rsg,id_rsg):
     """
@@ -48,10 +50,10 @@ def addsubgroups(data_asg,id_asg,peinf_asg):
     return peinf_asg
 
 # open the backup classification
-with open(params['source_classification_file']) as data_file:
+with open(source_classification_file) as data_file:
     data = json.load(data_file)
 # open the DR server classification
-with open(params['target_classification_file']) as data_fileDR:
+with open(target_classification_file) as data_fileDR:
     data_DR = json.load(data_fileDR)
 
 # find the infrastructure group and its ID
