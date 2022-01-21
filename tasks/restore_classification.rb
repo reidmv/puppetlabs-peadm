@@ -32,7 +32,7 @@ class RestoreClassification
     classification = https_client
     classification_post = Net::HTTP::Post.new('classifier-api/v1/import-hierarchy')
     classification_post.content_type = 'application/json'
-    classification_post.body = File.read(params[‘classification_file’])  
+    classification_post.body = File.read(@params[‘classification_file’])  
     JSON.parse(classification.request(classification_post).body)
 
   end
