@@ -13,7 +13,7 @@ class RestoreClassification
   end
 
   def execute!
-    restore_classification)
+    restore_classification
     puts "Classification restored from #{@params['classification_file']}/"
   end
 
