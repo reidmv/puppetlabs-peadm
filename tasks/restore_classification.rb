@@ -14,7 +14,7 @@ class RestoreClassification
 
   def execute!
     restore_classification
-    puts "Classification restored from #{@params['classification_file']}/"
+    puts "Classification restored from #{@classification_file}"
   end
 
   private
