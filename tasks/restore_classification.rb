@@ -13,8 +13,8 @@ class RestoreClassification
   end
 
   def execute!
-    File.write("#{@params['directory']}/classification_backup.json", return_classification)
-    puts "Classification written to #{@params['directory']}/classification_backup.json"
+    restore_classification)
+    puts "Classification restored from #{@params['classification_file']}/"
   end
 
   private
