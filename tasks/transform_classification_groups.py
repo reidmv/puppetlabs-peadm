@@ -50,11 +50,14 @@ def addsubgroups(data_asg,id_asg,peinf_asg):
     return peinf_asg
 
 # open the backup classification
-with open(source_classification_file) as data_file:
+#with open(params['source_classification_file']) as data_file:
+with open('/var/tmp/classification.json') as data_file:
     data = json.load(data_file)
 # open the DR server classification
-with open(target_classification_file) as data_fileDR:
+#with open(params['target_classification_file']) as data_fileDR:
+with open('/var/tmp/classificationDR.json') as data_fileDR:
     data_DR = json.load(data_fileDR)
+
 
 # find the infrastructure group and its ID
 peinf = list(filter(lambda x:x ["name"]=="PE Infrastructure",data))
