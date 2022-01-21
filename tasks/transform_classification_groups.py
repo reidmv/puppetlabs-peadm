@@ -6,9 +6,9 @@ target. Allowing the ability to restore a backup of user node definitions"""
 import json
 import sys
 params = json.load(sys.stdin)
-source_classification_file      = params['source_classification_file']
-target_classification_file      = params['target_classification_file']
-transformed_classification_file = params['target_classification_file']
+source_classification_file      = "params['source_classification_directory']/classification_backup.json"
+target_classification_file      = "params['target_classification_directory']/classification_backup.json"
+transformed_classification_file = "params['target_classification_directory']/transformed_classification.json"
 
 def removesubgroups(data_rsg,id_rsg):
     """

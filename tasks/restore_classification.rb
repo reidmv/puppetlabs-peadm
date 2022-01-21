@@ -30,9 +30,11 @@ class RestoreClassification
 
   def restore_classification
     classification = https_client
-    classification_request = Net::HTTP::Get.new('/status/v1/services?level=debug')
+    classification_post = Net::HTTP::Post.new('classifier-api/v1/import-hierarchy')
+    classification_post.content-Type = 'application/json'
+    classification_post.body = File.read(params[‘classification_file’])  
+    JSON.parse(classification.request(classification_post).body)
 
-    JSON.parse(classification.request(classification_request).body)
   end
 end
 # Run the task unless an environment flag has been set, signaling not to. The

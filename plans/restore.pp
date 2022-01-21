@@ -21,7 +21,8 @@ plan peadm::backup (
   Boolean                            $restore_ca_ssl          = true,
   Boolean                            $restore_puppetdb        = false,
   Boolean                            $restore_classification  = true,
-  String                             $input_directory       = '/tmp',
+  String                             $input_directory         = '/tmp',
+  String                             $working_directory       = '/tmp',
   Timestamp                          $backup_timestamp,
 ){
 
@@ -45,8 +46,16 @@ plan peadm::backup (
 
   if $restore_classification {
     out::message('# Restoring classification')
+    run_task('peadm::backup_classification', $primary_host,
+    directory => $backup_directory,
+    )
+      run_task('peadm::transform_classification', $primary_host,
+    source_classification_directory => $backup_directory,
+    target_classification_directory => $working_directory,
+    transformed_classification_directory => $working_directory
+    )
     run_task('peadm::restore_classification', $primary_host,
-    directory => "$backup_directory",
+    directory => $working_directory,
     )
   }
 
