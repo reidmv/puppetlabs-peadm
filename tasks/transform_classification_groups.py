@@ -25,7 +25,7 @@ def removesubgroups(data_rsg,id_rsg):
     groups = list(filter(lambda x:x ["parent"]==id_rsg,data_rsg))
     for group in groups:
         subid = group["id"]
-        data_rsg = list(filter(lambda x:x ["id"]!=subid,data)) # pylint: disable=cell-var-from-loop
+        data_rsg = list(filter(lambda x:x ["id"]!=subid,data_rsg)) # pylint: disable=cell-var-from-loop
         data_rsg = removesubgroups(data_rsg,subid)
     return data_rsg
 
