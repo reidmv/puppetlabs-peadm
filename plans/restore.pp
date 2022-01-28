@@ -5,15 +5,6 @@
 plan peadm::backup (
   # Standard
   Peadm::SingleTargetSpec           $primary_host,
-  Optional[Peadm::SingleTargetSpec] $replica_host            = undef,
-
-  # Large
-  Optional[TargetSpec]              $compiler_hosts          = undef,
-
-  # Extra Large
-  Optional[Peadm::SingleTargetSpec] $primary_postgresql_host = undef,
-  Optional[Peadm::SingleTargetSpec] $replica_postgresql_host = undef,
-
   # Which data to restore
   Boolean                            $restore_orchestrator    = true,
   Boolean                            $restore_rbac            = true,
@@ -25,6 +16,18 @@ plan peadm::backup (
   String                             $working_directory       = '/tmp',
   Timestamp                          $backup_timestamp,
 ){
+  peadm::assert_supported_bolt_version()
+  $cluster = run_task('peadm::get_peadm_config', $primary_host).first
+  $arch = peadm::assert_supported_architecture(
+    $primary_host,
+    $cluster['replica_host'],
+    $cluster['primary_postgresql_host'],
+    $cluster['replica_postgresql_host'],
+    $cluster['compiler_hosts'],
+  )
+  servers = [$primary_host , $cluster['replica_host'] ].filter | String $server_hosts | { $server_hosts =~  NotUndef }
+  cluster_servers_undef = $servers + $cluster['compiler_hosts'] + [ $cluster['primary_postgresql_host'], $cluster['replica_postgresql_host']] # lint:ignore:140chars
+  cluster_servers= cluster_servers_undef.filter | String $server_hosts | { $server_hosts =~  NotUndef }
 
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
   # Check backup exists folder
@@ -35,54 +38,121 @@ plan peadm::backup (
 
   peadm::assert_supported_bolt_version()
 
-  # Ensure input valid for a supported architecture
-  $arch = peadm::assert_supported_architecture(
-    $primary_host,
-    $replica_host,
-    $primary_postgresql_host,
-    $replica_postgresql_host,
-    $compiler_hosts,
-  )
-
   if $restore_classification {
+
     out::message('# Restoring classification')
     run_task('peadm::backup_classification', $primary_host,
-    directory => $backup_directory,
-    )
-      run_task('peadm::transform_classification', $primary_host,
-    source_classification_directory => $backup_directory,
-    target_classification_directory => $working_directory,
-    transformed_classification_directory => $working_directory
-    )
-    run_task('peadm::restore_classification', $primary_host,
     directory => $working_directory,
+    out::message('# Backed up current classification to $working_directory/classification_backup.json')
+    )
+
+    run_task('peadm::transform_classification', $primary_host,
+    source_directory => $backup_directory,
+    working_directory => $working_directory,
+    )
+
+    run_task('peadm::restore_classification', $primary_host,
+    classification_file => "${working_directory}/classification_backup.json",
     )
   }
 
-  if $backup_ca_ssl {
+  if $restore_ca_ssl {
     out::message('# Restoring ca and ssl certificates')
     run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/ --scope=certs", $primary_host)
   }
 
-  # Check if /etc/puppetlabs/console-services/conf.d/secrets/keys.json exists and if so back it up
-  out::message('# Backing up ldap secret key if it exists')
-  run_command("test -f /etc/puppetlabs/console-services/conf.d/secrets/keys.json && cp -rp /etc/puppetlabs/console-services/conf.d/secrets/keys.json ${backup_directory} || echo secret ldap key doesnt exist" , $primary_host) # lint:ignore:140chars
-
-  # IF backing up orchestrator back up the secrets too /etc/puppetlabs/orchestration-services/conf.d/secrets/
-  if $backup_orchestrator {
-    out::message('# Backing up orchestrator secret keys')
-    run_command("cp -rp /etc/puppetlabs/orchestration-services/conf.d/secrets ${backup_directory}/", $primary_host)
+  ## shutdown services Primary and replica
+  servers.each | String $host | {
+  run_task('service', $host,
+    action  => 'stopped',
+    service => 'pe-console-services'
+  )
+    run_task('service', $host,
+    action  => 'stopped',
+    service => 'pe-nginx'
+  )
+      run_task('service', $host,
+    action  => 'stopped',
+    service => 'pe-puppetserver'
+  )
+      run_task('service', $host,
+    action  => 'stopped',
+    service => 'pxp-agent'
+  )
+      run_task('service', $host,
+    action  => 'stopped',
+    service => 'pe-orchestration-services'
+  )
+  }
+# On every infra server
+  cluster_servers.each | String $host | {
+        run_task('service', $host,
+    action  => 'stopped',
+    service => 'puppet'
+  )
+        run_task('service', $host,
+    action  => 'stopped',
+    service => 'pe-puppetdb'
+  )
   }
 
-  $database_to_backup.each |Integer $index, Boolean $value | {
+  # Restore secrets/keys.json if it exists
+  out::message('# Restoring ldap secret key if it exists')
+  run_command("test -f ${backup_directory}//keys.json && cp -rp ${backup_directory}/keys.json /etc/puppetlabs/console-services/conf.d/secrets/ || echo secret ldap key doesnt exist" , $primary_host) # lint:ignore:140chars
+
+  # IF restoring orchestrator restore the secrets too /etc/puppetlabs/orchestration-services/conf.d/secrets/
+  if $backup_orchestrator {
+    out::message('# Restoring orchestrator secret keys')
+    run_command("cp -rp ${backup_directory}/secrets/* /etc/puppetlabs/orchestration-services/conf.d/secrets ", $primary_host)
+  }
+
+  $database_to_restore.each |Integer $index, Boolean $value | {
     if $value {
-    out::message("# Backing up database ${database_names[$index]}")
+    out::message("# Restoring database ${database_names[$index]}")
       # If the primary postgresql host is set then pe-puppetdb needs to be remotely backed up to primary.
       if $database_names[$index] == 'pe-puppetdb' and $primary_postgresql_host {
-        run_command("sudo -u pe-puppetdb /opt/puppetlabs/server/bin/pg_dump \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -f /tmp/puppetdb_$(date +%F_%T).bin" , $primary_host) # lint:ignore:140chars
+        run_command("sudo -u pe-puppetdb /opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" --format template1 ${backup_directory}/puppetdb_*.bin" , $primary_host) # lint:ignore:140chars
       } else {
-        run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_dump -Fc \"${database_names[$index]}\" -f \"${backup_directory}/${database_names[$index]}_$(date +%F_%T).bin\"" , $primary_host) # lint:ignore:140chars
+        run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_restore -d template1 -Cc \"${backup_directory}/${database_names[$index]}_*.bin\"" , $primary_host) # lint:ignore:140chars
       }
     }
   }
+
+  ## Restart services
+  ## shutdown services Primary and replica
+  servers.each | String $host | {
+        run_task('service', $host,
+    action  => 'start',
+    service => 'pe-orchestration-services'
+  )
+      run_task('service', $host,
+    action  => 'start',
+    service => 'pxp-agent'
+  )
+      run_task('service', $host,
+    action  => 'start',
+    service => 'pe-puppetserver'
+  )
+      run_task('service', $host,
+    action  => 'start',
+    service => 'pe-nginx'
+  )
+  run_task('service', $host,
+    action  => 'start',
+    service => 'pe-console-services'
+  )
+  }
+# On every infra server
+  cluster_servers.each | String $host | {
+        run_task('service', $host,
+    action  => 'start',
+    service => 'puppet'
+  )
+        run_task('service', $host,
+    action  => 'start',
+    service => 'pe-puppetdb'
+  )
+  }
+
+
 }
