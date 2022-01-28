@@ -2,7 +2,7 @@
 #
 # This plan can restore data to puppet infrastructure for DR and rebuilds
 # 
-plan peadm::backup (
+plan peadm::restore (
   # Standard
   Peadm::SingleTargetSpec           $primary_host,
   # Which data to restore
