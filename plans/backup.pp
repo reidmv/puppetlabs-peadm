@@ -26,8 +26,9 @@ plan peadm::backup (
 
   $timestamp = Timestamp.new().strftime('%F_%T')
   $backup_directory = "${output_directory}/pe-backup-${timestamp}"
-# This is a workaround to deal with the permissions requiring us to allow pg dump to run as pe-postgres and pe-puppetdb but not wanting to leave permissions open on the backup.
-# A temporary directory is created for the dump and then the dumps are move into the main backup at which point this directory is removed
+# This is a workaround to deal with the permissions requiring us to allow pg dump to run as pe-postgres and pe-puppetdb but not wanting to
+# leave permissions open on the backup. A temporary directory is created for the dump and then the dumps are move into the main backup at
+# which point this directory is removed
   $database_backup_directory = "${output_directory}/pe-backup-databases-${timestamp}"
   # Create backup folder
   apply($primary_host){
