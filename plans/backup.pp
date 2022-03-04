@@ -89,6 +89,7 @@ plan peadm::backup (
     apply($primary_host){
     file { $database_backup_directory :
       ensure => 'absent',
+      force  => true
     }
   }
 }
