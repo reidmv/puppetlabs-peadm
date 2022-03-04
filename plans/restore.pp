@@ -14,7 +14,7 @@ plan peadm::restore (
   Boolean                            $restore_classification  = true,
   String                             $input_directory         = '/tmp',
   String                             $working_directory       = '/tmp',
-  Timestamp                          $backup_timestamp,
+  String                             $backup_timestamp,
 ){
   peadm::assert_supported_bolt_version()
   $cluster = run_task('peadm::get_peadm_config', $primary_host).first
