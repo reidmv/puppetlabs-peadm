@@ -42,13 +42,13 @@ plan peadm::restore (
 
     out::message('# Restoring classification')
     run_task('peadm::backup_classification', $primary_host,
-    directory => $working_directory,
-    out::message('# Backed up current classification to $working_directory/classification_backup.json')
+      directory => $working_directory
     )
+    out::message('# Backed up current classification to ${working_directory}/classification_backup.json')
 
     run_task('peadm::transform_classification', $primary_host,
-    source_directory => $backup_directory,
-    working_directory => $working_directory,
+      source_directory => $backup_directory,
+      working_directory => $working_directory
     )
 
     run_task('peadm::restore_classification', $primary_host,
