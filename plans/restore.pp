@@ -33,7 +33,7 @@ plan peadm::restore (
   # Check backup exists folder
 
   # Create an array of the names of databases and whether they have to be backed up to use in a lambda later
-  $database_to_restore = [ $backup_orchestrator, $backup_activity, $backup_rbac, $backup_puppetdb]
+  $database_to_restore = [ $restore_orchestrator, $restore_activity, $restore_rbac, $restore_puppetdb]
   $database_names      = [ 'pe-orchestrator' , 'pe-activity' , 'pe-rbac' , 'pe-puppetdb' ]
 
   peadm::assert_supported_bolt_version()
