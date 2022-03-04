@@ -63,37 +63,37 @@ plan peadm::restore (
 
   ## shutdown services Primary and replica
   servers.each | String $host | {
-  run_task('service', $host,
-    action  => 'stopped',
-    service => 'pe-console-services'
-  )
     run_task('service', $host,
-    action  => 'stopped',
-    service => 'pe-nginx'
-  )
-      run_task('service', $host,
-    action  => 'stopped',
-    service => 'pe-puppetserver'
-  )
-      run_task('service', $host,
-    action  => 'stopped',
-    service => 'pxp-agent'
-  )
-      run_task('service', $host,
-    action  => 'stopped',
-    service => 'pe-orchestration-services'
-  )
+      action  => 'stopped',
+      service => 'pe-console-services'
+    )
+    run_task('service', $host,
+      action  => 'stopped',
+      service => 'pe-nginx'
+    )
+    run_task('service', $host,
+      action  => 'stopped',
+      service => 'pe-puppetserver'
+    )
+    run_task('service', $host,
+      action  => 'stopped',
+      service => 'pxp-agent'
+    )
+    run_task('service', $host,
+      action  => 'stopped',
+      service => 'pe-orchestration-services'
+    )
   }
 # On every infra server
   cluster_servers.each | String $host | {
-        run_task('service', $host,
-    action  => 'stopped',
-    service => 'puppet'
-  )
-        run_task('service', $host,
-    action  => 'stopped',
-    service => 'pe-puppetdb'
-  )
+    run_task('service', $host,
+      action  => 'stopped',
+      service => 'puppet'
+    )
+    run_task('service', $host,
+      action  => 'stopped',
+      service => 'pe-puppetdb'
+    )
   }
 
   # Restore secrets/keys.json if it exists
