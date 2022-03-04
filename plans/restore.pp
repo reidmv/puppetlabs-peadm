@@ -58,7 +58,7 @@ plan peadm::restore (
 
   if $restore_ca_ssl {
     out::message('# Restoring ca and ssl certificates')
-    run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/pe_backup-*tgz --scope=certs", $primary_host)
+    run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/pe_backup-*tgz --scope=certs --tempdir=$(working_directory) --force", $primary_host)
   }
 
   ## shutdown services Primary and replica
