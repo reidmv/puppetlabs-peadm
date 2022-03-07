@@ -62,7 +62,7 @@ plan peadm::restore (
   }
 
   ## shutdown services Primary and replica
-  servers.each | String $host | {
+  $servers.each | String $host | {
     run_task('service', $host,
       action => 'stop',
       name   => 'pe-console-services'
@@ -85,7 +85,7 @@ plan peadm::restore (
     )
   }
 # On every infra server
-  cluster_servers.each | String $host | {
+  $cluster_servers.each | String $host | {
     run_task('service', $host,
       action => 'stop',
       name   => 'puppet'
@@ -144,7 +144,7 @@ plan peadm::restore (
 
   ## Restart services
   ## shutdown services Primary and replica
-  servers.each | String $host | {
+  $servers.each | String $host | {
         run_task('service', $host,
     action => 'start',
     name   => 'pe-orchestration-services'
@@ -167,7 +167,7 @@ plan peadm::restore (
   )
   }
 # On every infra server
-  cluster_servers.each | String $host | {
+  $cluster_servers.each | String $host | {
         run_task('service', $host,
     action => 'start',
     name   => 'puppet'
