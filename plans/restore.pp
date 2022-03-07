@@ -44,7 +44,7 @@ plan peadm::restore (
     run_task('peadm::backup_classification', $primary_host,
       directory => $working_directory
     )
-    out::message('# Backed up current classification to ${working_directory}/classification_backup.json')
+    out::message("# Backed up current classification to ${working_directory}/classification_backup.json")
 
     run_task('peadm::transform_classification_groups', $primary_host,
       source_directory => $backup_directory,
@@ -58,41 +58,41 @@ plan peadm::restore (
 
   if $restore_ca_ssl {
     out::message('# Restoring ca and ssl certificates')
-    run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/pe_backup-*tgz --scope=certs --tempdir=$(working_directory) --force", $primary_host)
+    run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/pe_backup-*tgz --scope=certs --tempdir=$(working_directory) --force", $primary_host) # lint:ignore:140chars
   }
 
   ## shutdown services Primary and replica
   servers.each | String $host | {
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'pe-console-services'
+      action => 'stop',
+      name   => 'pe-console-services'
     )
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'pe-nginx'
+      action => 'stop',
+      name   => 'pe-nginx'
     )
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'pe-puppetserver'
+      action => 'stop',
+      name   => 'pe-puppetserver'
     )
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'pxp-agent'
+      action => 'stop',
+      name   => 'pxp-agent'
     )
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'pe-orchestration-services'
+      action => 'stop',
+      name   => 'pe-orchestration-services'
     )
   }
 # On every infra server
   cluster_servers.each | String $host | {
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'puppet'
+      action => 'stop',
+      name   => 'puppet'
     )
     run_task('service', $host,
-      action  => 'stopped',
-      service => 'pe-puppetdb'
+      action => 'stop',
+      name   => 'pe-puppetdb'
     )
   }
 
@@ -146,35 +146,35 @@ plan peadm::restore (
   ## shutdown services Primary and replica
   servers.each | String $host | {
         run_task('service', $host,
-    action  => 'start',
-    service => 'pe-orchestration-services'
+    action => 'start',
+    name   => 'pe-orchestration-services'
   )
       run_task('service', $host,
-    action  => 'start',
-    service => 'pxp-agent'
+    action => 'start',
+    name   => 'pxp-agent'
   )
       run_task('service', $host,
-    action  => 'start',
-    service => 'pe-puppetserver'
+    action => 'start',
+    name   => 'pe-puppetserver'
   )
       run_task('service', $host,
-    action  => 'start',
-    service => 'pe-nginx'
+    action => 'start',
+    name   => 'pe-nginx'
   )
   run_task('service', $host,
-    action  => 'start',
-    service => 'pe-console-services'
+    action => 'start',
+    name   => 'pe-console-services'
   )
   }
 # On every infra server
   cluster_servers.each | String $host | {
         run_task('service', $host,
-    action  => 'start',
-    service => 'puppet'
+    action => 'start',
+    name   => 'puppet'
   )
         run_task('service', $host,
-    action  => 'start',
-    service => 'pe-puppetdb'
+    action => 'start',
+    name   => 'pe-puppetdb'
   )
   }
 }
