@@ -27,7 +27,7 @@ plan peadm::restore (
   )
   $servers = [$primary_host , $cluster['replica_host'] ].filter | $server_hosts | { $server_hosts =~  NotUndef }
   $cluster_servers_undef = $servers + $cluster['compiler_hosts'] + [ $cluster['primary_postgresql_host'], $cluster['replica_postgresql_host']] # lint:ignore:140chars
-  $cluster_servers= cluster_servers_undef.filter | $server_hosts | { $server_hosts =~  NotUndef }
+  $cluster_servers= $cluster_servers_undef.filter | $server_hosts | { $server_hosts =~  NotUndef }
 
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
   # Check backup exists folder
