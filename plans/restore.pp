@@ -129,7 +129,7 @@ plan peadm::restore (
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"", $primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"", $primary_host) # lint:ignore:140chars
         # Restore database
-        run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_restore -d ${database_names[$index]} -Cc \"${backup_directory}/${database_names[$index]}_*.bin\"",$primary_host) # lint:ignore:140chars
+        run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_restore -d ${database_names[$index]} -Cc ${backup_directory}/${database_names[$index]}_*.bin",$primary_host) # lint:ignore:140chars
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"",$primary_host) # lint:ignore:140chars
