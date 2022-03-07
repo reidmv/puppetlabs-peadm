@@ -101,7 +101,7 @@ plan peadm::restore (
   run_command("test -f ${backup_directory}//keys.json && cp -rp ${backup_directory}/keys.json /etc/puppetlabs/console-services/conf.d/secrets/ || echo secret ldap key doesnt exist" , $primary_host) # lint:ignore:140chars
 
   # IF restoring orchestrator restore the secrets too /etc/puppetlabs/orchestration-services/conf.d/secrets/
-  if $backup_orchestrator {
+  if $restore_orchestrator {
     out::message('# Restoring orchestrator secret keys')
     run_command("cp -rp ${backup_directory}/secrets/* /etc/puppetlabs/orchestration-services/conf.d/secrets ", $primary_host)
   }
