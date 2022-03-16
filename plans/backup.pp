@@ -15,16 +15,18 @@ plan peadm::backup (
   String                  $output_directory       = '/tmp',
 ) {
   peadm::assert_supported_bolt_version()
-  $cluster = run_task('peadm::get_peadm_config', $primary_host).first.value
+  $cluster = run_task('peadm::get_peadm_config', $primary_host).first
   $arch = peadm::assert_supported_architecture(
     $primary_host,
-    $cluster['params','replica_host'],
-    $cluster['params','primary_postgresql_host'],
-    $cluster['params','replica_postgresql_host'],
-    $cluster['params','compiler_hosts'],
+    $cluster['replica_host'],
+    $cluster['primary_postgresql_host'],
+    $cluster['replica_postgresql_host'],
+    $cluster['compiler_hosts'],
   )
+  out::message("# Backing up database ${arch}")
   $timestamp = Timestamp.new().strftime('%F_%T')
   $backup_directory = "${output_directory}/pe-backup-${timestamp}"
+  $primary_postgresql_host = $cluster.value['params','primary_postgresql_host']
 # This is a workaround to deal with the permissions requiring us to allow pg dump to run as pe-postgres and pe-puppetdb but not wanting to
 # leave permissions open on the backup. A temporary directory is created for the dump and then the dumps are move into the main backup at
 # which point this directory is removed
@@ -76,7 +78,7 @@ plan peadm::backup (
     out::message("# Backing up database ${database_names[$index]}")
       # If the primary postgresql host is set then pe-puppetdb needs to be remotely backed up to primary.
       if $database_names[$index] == 'pe-puppetdb' and $cluster['params','primary_postgresql_host'] {
-        run_command("sudo -u pe-puppetdb /opt/puppetlabs/server/bin/pg_dump \"sslmode=verify-ca host=${cluster['params','primary_postgresql_host']} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${database_backup_directory}/puppetdb_$(date +%F_%T).bin" , $primary_host) # lint:ignore:140chars
+        run_command("sudo -u pe-puppetdb /opt/puppetlabs/server/bin/pg_dump \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${database_backup_directory}/puppetdb_$(date +%F_%T).bin" , $primary_host) # lint:ignore:140chars
         run_command("mv ${database_backup_directory}/puppetdb_*.bin ${backup_directory}/", $primary_host )
       } else {
         run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_dump -Fd -Z3 -j4 \"${database_names[$index]}\" -f \"${database_backup_directory}/${database_names[$index]}_$(date +%F_%T).bin\"" , $primary_host) # lint:ignore:140chars
