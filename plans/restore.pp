@@ -122,8 +122,8 @@ plan peadm::restore (
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"", $primary_postgresql_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"", $primary_postgresql_host) # lint:ignore:140chars
         # Restore database
-        run_command("cp ${backup_directory}/puppetdb_*.bin ${database_backup_directory}/", $primary_host )
-        run_command("sudo -u pe-puppetdb /opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${database_backup_directory}/puppetdb_*.bin" , $primary_host) # lint:ignore:140chars
+        run_command("cp -p ${backup_directory}/puppetdb_*.bin ${database_backup_directory}/", $primary_host )
+        run_command("sudo -hu pe-puppetdb /opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${database_backup_directory}/puppetdb_*.bin" , $primary_host) # lint:ignore:140chars
         run_command("rm ${database_backup_directory}/puppetdb_*.bin", $primary_host )
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s'/bin/bash -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_postgresql_host) # lint:ignore:140chars
@@ -138,10 +138,10 @@ plan peadm::restore (
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"", $primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"", $primary_host) # lint:ignore:140chars
         # Restore database
-        run_command("cp ${backup_directory}/puppetdb_*.bin ${database_backup_directory}/", $primary_host )
+        run_command("cp -p ${backup_directory}/puppetdb_*.bin ${database_backup_directory}/", $primary_host )
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/pg_restore ${database_backup_directory}/${database_names[$index]}_*.bin -Fd -j4 --dbname=${database_names[$index]}\"", $primary_host)# lint:ignore:140chars
-        run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_restore -d ${database_names[$index]} -c ${backup_directory}/${database_names[$index]}_*.bin",$primary_host) # lint:ignore:140chars
-        run_command("rm ${database_backup_directory}/${database_names[$index]}_*.bin", $primary_host )
+        run_command("sudo -hu pe-postgres /opt/puppetlabs/server/bin/pg_restore -d ${database_names[$index]} -c ${backup_directory}/${database_names[$index]}_*.bin",$primary_host) # lint:ignore:140chars
+        run_command("rm ${database_backup_directory}/puppetdb_*.bin", $primary_host )
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"",$primary_host) # lint:ignore:140chars
