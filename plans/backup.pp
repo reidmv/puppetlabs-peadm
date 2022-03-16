@@ -18,14 +18,11 @@ plan peadm::backup (
   $cluster = run_task('peadm::get_peadm_config', $primary_host).first
   $arch = peadm::assert_supported_architecture(
     $primary_host,
-    $cluster['replica_host'],
-    $cluster['primary_postgresql_host'],
-    $cluster['replica_postgresql_host'],
-    $cluster['compiler_hosts'],
+    $cluster['params','replica_host'],
+    $cluster['params','primary_postgresql_host'],
+    $cluster['params','replica_postgresql_host'],
+    $cluster['params','compiler_hosts'],
   )
-  $primary_postgresql_host = cluster
-  $replica_postgresql_host = cluster
-
   $timestamp = Timestamp.new().strftime('%F_%T')
   $backup_directory = "${output_directory}/pe-backup-${timestamp}"
 # This is a workaround to deal with the permissions requiring us to allow pg dump to run as pe-postgres and pe-puppetdb but not wanting to
