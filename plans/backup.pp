@@ -15,7 +15,7 @@ plan peadm::backup (
   String                  $output_directory       = '/tmp',
 ) {
   peadm::assert_supported_bolt_version()
-  $cluster = run_task('peadm::get_peadm_config', $primary_host).first
+  $cluster = run_task('peadm::get_peadm_config', $primary_host).first.to_data
   $arch = peadm::assert_supported_architecture(
     $primary_host,
     $cluster['params','replica_host'],
