@@ -25,12 +25,12 @@ plan peadm::restore (
     $cluster['params']['replica_postgresql_host'],
     $cluster['params']['compiler_hosts'],
   )
-  $servers = [$primary_host , $cluster['replica_host'] ].filter | $server_hosts | { $server_hosts =~  NotUndef }
-  $cluster_servers_undef = $servers + $cluster['compiler_hosts'] + [ $cluster['primary_postgresql_host'], $cluster['replica_postgresql_host']] # lint:ignore:140chars
-  $cluster_servers= $cluster_servers_undef.filter | $server_hosts | { $server_hosts =~  NotUndef }
-
+  $servers = delete_undef_values([$primary_host , $cluster['params']['replica_host'] ])
+  $cluster_servers = delete_undef_values($servers + $cluster['params']['compiler_hosts'] + [ $cluster['params']['primary_postgresql_host'], $cluster['params']['replica_postgresql_host']]) # lint:ignore:140chars
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
   $database_backup_directory = "${output_directory}/pe-backup-databases-${timestamp}"
+  # I need the actual hostname for the certificate in a remote puppetdb backup. If a user sends primary host as IP it will fail
+  $primary_host_fqdn = $cluster['params']['primary_host']
   apply($primary_host){
     file { $database_backup_directory :
       ensure => 'directory',
@@ -124,13 +124,13 @@ plan peadm::restore (
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"", $primary_postgresql_host) # lint:ignore:140chars
         # Restore database
         run_command("cp -p ${backup_directory}/puppetdb_*.bin ${database_backup_directory}/ ", $primary_host )
-        run_command("sudo -hu pe-puppetdb /opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${database_backup_directory}/puppetdb_*.bin" , $primary_host) # lint:ignore:140chars
+        run_command("sudo -hu pe-puppetdb /opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${database_backup_directory}/puppetdb_*.bin" , $primary_host) # lint:ignore:140chars
         run_command("rm ${database_backup_directory}/puppetdb_*.bin", $primary_host )
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s'/bin/bash -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_postgresql_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"",$primary_postgresql_host) # lint:ignore:140chars
-        if $replica_postgresql_host {
-          run_task('enterprise_tasks::reinitialize_replica', $replica_postgresql_host,
+        if $cluster['params']['replica_postgresql_host']{
+          run_task('enterprise_tasks::reinitialize_replica', $cluster['params']['replica_postgresql_host'],
             database => 'pe-puppetdb'
           )
         }
@@ -146,8 +146,8 @@ plan peadm::restore (
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"",$primary_host) # lint:ignore:140chars
-        if $replica_primary_host {
-          run_task('enterprise_tasks::reinitialize_replica', $replica_primary_host,
+        if $cluster['params']['replica_host'] {
+          run_task('enterprise_tasks::reinitialize_replica', $cluster['params']['replica_host'],
             database => $database_names[$index]
           )
         }
