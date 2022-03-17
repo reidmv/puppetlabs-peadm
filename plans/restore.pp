@@ -28,7 +28,7 @@ plan peadm::restore (
   $servers = delete_undef_values([$primary_host , $cluster['params']['replica_host'] ])
   $cluster_servers = delete_undef_values($servers + $cluster['params']['compiler_hosts'] + [ $cluster['params']['primary_postgresql_host'], $cluster['params']['replica_postgresql_host']]) # lint:ignore:140chars
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
-  $database_backup_directory = "${working_directory}/pe-backup-databases-${timestamp}"
+  $database_backup_directory = "${working_directory}/pe-backup-databases-${backup_timestamp}"
   # I need the actual hostname for the certificate in a remote puppetdb backup. If a user sends primary host as IP it will fail
   $primary_host_fqdn = $cluster['params']['primary_host']
   apply($primary_host){
