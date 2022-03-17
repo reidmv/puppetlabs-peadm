@@ -17,13 +17,13 @@ plan peadm::restore (
   String                             $backup_timestamp,
 ){
   peadm::assert_supported_bolt_version()
-  $cluster = run_task('peadm::get_peadm_config', $primary_host).first
+  $cluster = run_task('peadm::get_peadm_config', $primary_host).first.value
   $arch = peadm::assert_supported_architecture(
     $primary_host,
-    $cluster['replica_host'],
-    $cluster['primary_postgresql_host'],
-    $cluster['replica_postgresql_host'],
-    $cluster['compiler_hosts'],
+    $cluster['params']['replica_host'],
+    $cluster['params']['primary_postgresql_host'],
+    $cluster['params']['replica_postgresql_host'],
+    $cluster['params']['compiler_hosts'],
   )
   $servers = [$primary_host , $cluster['replica_host'] ].filter | $server_hosts | { $server_hosts =~  NotUndef }
   $cluster_servers_undef = $servers + $cluster['compiler_hosts'] + [ $cluster['primary_postgresql_host'], $cluster['replica_postgresql_host']] # lint:ignore:140chars
@@ -31,12 +31,13 @@ plan peadm::restore (
 
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
   $database_backup_directory = "${output_directory}/pe-backup-databases-${timestamp}"
-
-  file { $database_backup_directory :
-    ensure => 'directory',
-    owner  => 'pe-puppetdb',
-    group  => 'pe-postgres',
-    mode   => '0770'
+  apply($primary_host){
+    file { $database_backup_directory :
+      ensure => 'directory',
+      owner  => 'pe-puppetdb',
+      group  => 'pe-postgres',
+      mode   => '0770'
+    }
   }
 
   # Create an array of the names of databases and whether they have to be backed up to use in a lambda later
