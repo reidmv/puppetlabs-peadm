@@ -141,7 +141,7 @@ plan peadm::restore (
         # Restore database
         run_command("cp -pr ${backup_directory}/${database_names[$index]}_*.bin ${database_backup_directory}/ ", $primary_host )
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/pg_restore ${database_backup_directory}/${database_names[$index]}_*.bin -Fd -j4 --dbname=${database_names[$index]}\"", $primary_host)# lint:ignore:140chars
-        run_command("sudo -H -u pe-postgres /opt/puppetlabs/server/bin/pg_restore -d ${database_names[$index]} -c ${backup_directory}/${database_names[$index]}_*.bin",$primary_host) # lint:ignore:140chars
+        run_command("sudo -H -u pe-postgres /opt/puppetlabs/server/bin/pg_restore -d ${database_names[$index]} -c ${database_backup_directory}/${database_names[$index]}_*.bin",$primary_host) # lint:ignore:140chars
         run_command("rm -rf ${database_backup_directory}/${database_names[$index]}_*.bin", $primary_host )
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
