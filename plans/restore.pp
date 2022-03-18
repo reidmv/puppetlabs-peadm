@@ -36,6 +36,8 @@ plan peadm::restore (
     $puppetdb_compilers = $check_puppetdb_on_compilers.filter_set | $result | {
       $result['enabled'] == 'enabled'
     }.targets
+  } else {
+    $puppetdb_on_compilers = undef
   }
   $puppetdb_servers = delete_undef_values([$servers,$puppetdb_on_compilers])
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
@@ -81,7 +83,7 @@ plan peadm::restore (
     run_command("/opt/puppetlabs/bin/puppet-backup restore ${backup_directory}/pe_backup-*tgz --scope=certs --tempdir=${working_directory} --force", $primary_host) # lint:ignore:140chars
   }
 
-  ## shutdown services Primary and replica
+  ## shutdown services
     run_task('service', $servers,
       action => 'stop',
       name   => 'pe-console-services'
@@ -102,12 +104,10 @@ plan peadm::restore (
       action => 'stop',
       name   => 'pe-orchestration-services'
     )
-# On every infra server
     run_task('service', $cluster_servers,
       action => 'stop',
       name   => 'puppet'
     )
-# Devise a check around puppetdb on compilers
     run_task('service', $puppetdb_servers ,
       action => 'stop',
       name   => 'pe-puppetdb'
@@ -166,20 +166,19 @@ plan peadm::restore (
   }
 
   ## Restart services
-  ## shutdown services Primary and replica
-        run_task('service', $servers,
+  run_task('service', $servers,
     action => 'start',
     name   => 'pe-orchestration-services'
   )
-      run_task('service', $servers,
+  run_task('service', $servers,
     action => 'start',
     name   => 'pxp-agent'
   )
-      run_task('service', $servers,
+  run_task('service', $servers,
     action => 'start',
     name   => 'pe-puppetserver'
   )
-      run_task('service', $servers,
+  run_task('service', $servers,
     action => 'start',
     name   => 'pe-nginx'
   )
@@ -187,13 +186,11 @@ plan peadm::restore (
     action => 'start',
     name   => 'pe-console-services'
   )
-# On every infra server
-        run_task('service', $cluster_servers,
+  run_task('service', $cluster_servers,
     action => 'start',
     name   => 'puppet'
   )
-  # Devise a check around puppetdb on compilers
-        run_task('service', $puppetdb_servers,
+  run_task('service', $puppetdb_servers,
     action => 'start',
     name   => 'pe-puppetdb'
   )
