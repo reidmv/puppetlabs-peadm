@@ -28,12 +28,14 @@ plan peadm::restore (
   )
   $servers = delete_undef_values([$primary_host , $cluster['params']['replica_host'] ])
   $cluster_servers = delete_undef_values($servers + $cluster['params']['compiler_hosts'] + [ $cluster['params']['primary_postgresql_host'], $cluster['params']['replica_postgresql_host']]) # lint:ignore:140chars
-  $check_puppetdb_on_compilers = run_task('service', $cluster['params']['compiler_hosts'],
-    action => 'stop',
-    name   => 'pe-puppetdb'
-  )
-  $puppetdb_compilers = $check_puppetdb_on_compilers.filter_set | $result | {
-    $result['enabled'] == 'enabled'
+  if $cluster['params']['compiler_hosts'] {
+    $check_puppetdb_on_compilers = run_task('service', $cluster['params']['compiler_hosts'],
+      action => 'status',
+      name   => 'pe-puppetdb'
+    )
+    $puppetdb_compilers = $check_puppetdb_on_compilers.filter_set | $result | {
+      $result['enabled'] == 'enabled'
+    }
   }
   $puppetdb_servers = delete_undef_values([$servers,$puppetdb_on_compilers.targets])
   $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
