@@ -18,6 +18,7 @@ plan peadm::restore (
 ){
   peadm::assert_supported_bolt_version()
   $cluster = run_task('peadm::get_peadm_config', $primary_host).first.value
+
   $arch = peadm::assert_supported_architecture(
     $primary_host,
     $cluster['params']['replica_host'],
@@ -27,7 +28,11 @@ plan peadm::restore (
   )
   $servers = delete_undef_values([$primary_host , $cluster['params']['replica_host'] ])
   $cluster_servers = delete_undef_values($servers + $cluster['params']['compiler_hosts'] + [ $cluster['params']['primary_postgresql_host'], $cluster['params']['replica_postgresql_host']]) # lint:ignore:140chars
-  $backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
+  $puppetdb_on_compilers = run_task('service', $cluster['params']['compiler_hosts']).filter_set | $result | {
+    $result['enabled']enabled == 'enabled'
+  }
+  $puppetdb_servers = delete_undef_values([$servers,$puppetdb_on_compilers.targets])
+  backup_directory = "${input_directory}/pe-backup-${backup_timestamp}"
   $database_backup_directory = "${working_directory}/pe-backup-databases-${backup_timestamp}"
   # I need the actual hostname for the certificate in a remote puppetdb backup. If a user sends primary host as IP it will fail
   $primary_host_fqdn = $cluster['params']['primary_host']
@@ -71,39 +76,37 @@ plan peadm::restore (
   }
 
   ## shutdown services Primary and replica
-  $servers.each | String $host | {
-    run_task('service', $host,
+    run_task('service', $servers,
       action => 'stop',
       name   => 'pe-console-services'
     )
-    run_task('service', $host,
+    run_task('service', $servers,
       action => 'stop',
       name   => 'pe-nginx'
     )
-    run_task('service', $host,
+    run_task('service', $servers,
       action => 'stop',
       name   => 'pe-puppetserver'
     )
-    run_task('service', $host,
+    run_task('service', $servers,
       action => 'stop',
       name   => 'pxp-agent'
     )
-    run_task('service', $host,
+    run_task('service', $servers,
       action => 'stop',
       name   => 'pe-orchestration-services'
     )
-  }
 # On every infra server
-  $cluster_servers.each | String $host | {
-    run_task('service', $host,
+    run_task('service', $cluster_servers,
       action => 'stop',
       name   => 'puppet'
     )
-    run_task('service', $host,
+# Devise a check around puppetdb on compilers
+    run_task('service', $puppetdb_servers ,
       action => 'stop',
       name   => 'pe-puppetdb'
     )
-  }
+
 
   # Restore secrets/keys.json if it exists
   out::message('# Restoring ldap secret key if it exists')
@@ -158,39 +161,37 @@ plan peadm::restore (
 
   ## Restart services
   ## shutdown services Primary and replica
-  $servers.each | String $host | {
-        run_task('service', $host,
+        run_task('service', $servers,
     action => 'start',
     name   => 'pe-orchestration-services'
   )
-      run_task('service', $host,
+      run_task('service', $servers,
     action => 'start',
     name   => 'pxp-agent'
   )
-      run_task('service', $host,
+      run_task('service', $servers,
     action => 'start',
     name   => 'pe-puppetserver'
   )
-      run_task('service', $host,
+      run_task('service', $servers,
     action => 'start',
     name   => 'pe-nginx'
   )
-  run_task('service', $host,
+  run_task('service', $servers,
     action => 'start',
     name   => 'pe-console-services'
   )
-  }
 # On every infra server
-  $cluster_servers.each | String $host | {
-        run_task('service', $host,
+        run_task('service', $cluster_servers,
     action => 'start',
     name   => 'puppet'
   )
-        run_task('service', $host,
+  # Devise a check around puppetdb on compilers
+        run_task('service', $puppetdb_servers,
     action => 'start',
     name   => 'pe-puppetdb'
   )
-  }
+
   apply($primary_host){
     file { $database_backup_directory :
       ensure => 'absent',
