@@ -82,7 +82,7 @@ plan peadm::backup (
         run_command("/opt/puppetlabs/server/bin/pg_dump \"sslmode=verify-ca host=${primary_postgresql_host} user=pe-puppetdb sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb\" -Fd -Z3 -j4 -f ${backup_directory}/puppetdb_$(date +%F_%T)" , $primary_host) # lint:ignore:140chars
       } else {
         run_command("sudo -u pe-postgres /opt/puppetlabs/server/bin/pg_dump -Fd -Z3 -j4 \"${database_names[$index]}\" -f \"${database_backup_directory}/${database_names[$index]}_$(date +%F_%T)\"" , $primary_host) # lint:ignore:140chars
-        run_command("mv \"${database_backup_directory}/${database_names[$index]}*\" \'${backup_directory}/\'", $primary_host )
+        run_command("mv ${database_backup_directory}/${database_names[$index]}* ${backup_directory}/", $primary_host )
       }
     }
   }
