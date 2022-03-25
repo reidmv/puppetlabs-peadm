@@ -159,8 +159,7 @@ plan peadm::restore (
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP EXTENSION IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
         if $cluster['params']['replica_host'] {
-          run_command("/opt/puppetlabs/bin/puppet-infra reinitialize replica --db $database_names[$index] -y") 
-          )
+          run_command("/opt/puppetlabs/bin/puppet-infra reinitialize replica --db ${database_names[$index]} -y")
         }
       }
     }
