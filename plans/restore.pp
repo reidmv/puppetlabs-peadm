@@ -141,11 +141,6 @@ plan peadm::restore (
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_postgresql_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP EXTENSION IF EXISTS pglogical CASCADE;;'\"",$primary_postgresql_host) # lint:ignore:140chars
-        if $cluster['params']['replica_postgresql_host']{
-          run_task('enterprise_tasks::reinitialize_replica', $cluster['params']['replica_postgresql_host'],
-            database => 'pe-puppetdb'
-          )
-        }
       } else {
         # Drop pglogical extensions and schema if present
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"", $primary_host) # lint:ignore:140chars
@@ -158,9 +153,6 @@ plan peadm::restore (
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s '/bin/bash' -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP EXTENSION IF EXISTS pglogical CASCADE;'\"",$primary_host) # lint:ignore:140chars
-        if $cluster['params']['replica_host'] {
-          run_command("/opt/puppetlabs/bin/puppet-infra reinitialize replica --db ${database_names[$index]} -y", $cluster['params']['replica_host'] ) # lint:ignore:140chars
-        }
       }
     }
   }
@@ -194,6 +186,16 @@ plan peadm::restore (
     action => 'start',
     name   => 'pe-puppetdb'
   )
+# If we have replicas reinitalise any databases restored
+  if $cluster['params']['replica_host'] {
+    $database_to_restore.each |Integer $index, Boolean $value | {
+      if $database_names[$index] == 'pe-puppetdb' and $cluster['params']['replica_postgresql_host'] {
+        run_command('/opt/puppetlabs/bin/puppet-infra reinitialize replica --db pe-puppetdb -y', $cluster['params']['replica_postgresql_host'] ) # lint:ignore:140chars
+      } else {
+        run_command("/opt/puppetlabs/bin/puppet-infra reinitialize replica --db ${database_names[$index]} -y", $cluster['params']['replica_host'] ) # lint:ignore:140chars
+      }
+    }
+  }
 
   apply($primary_host){
     file { $database_backup_directory :
