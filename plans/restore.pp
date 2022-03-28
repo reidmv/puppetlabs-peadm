@@ -133,11 +133,11 @@ plan peadm::restore (
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"", $primary_postgresql_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\"", $primary_postgresql_host) # lint:ignore:140chars
         # To allow pe-puppetdb to restore the database grant temporary privileges
-        run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'ALTER USER \"pe-puppetdb\" WITH SUPERUSER;'\"", $primary_postgresql_host) # lint:ignore:140chars
+        run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'ALTER USER \\\"pe-puppetdb\\\" WITH SUPERUSER;'\"", $primary_postgresql_host) # lint:ignore:140chars
         # Restore database
-        run_command("/opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb user=pe-puppetdb\" -Fd -f ${backup_directory}/puppetdb_*" , $primary_host) # lint:ignore:140chars
+        run_command("/opt/puppetlabs/server/bin/pg_restore -d \"sslmode=verify-ca host=${primary_postgresql_host} sslcert=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.cert.pem sslkey=/etc/puppetlabs/puppetdb/ssl/${primary_host_fqdn}.private_key.pem sslrootcert=/etc/puppetlabs/puppet/ssl/certs/ca.pem dbname=pe-puppetdb user=pe-puppetdb\" -Fd ${backup_directory}/puppetdb_*" , $primary_host) # lint:ignore:140chars
         # Remove pe-puppetdb privileges post restore
-        run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'ALTER USER \"pe-puppetdb\" WITH NOSUPERUSER;'\"", $primary_postgresql_host) # lint:ignore:140chars
+        run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'ALTER USER \\\"pe-puppetdb\\\" WITH NOSUPERUSER;'\"", $primary_postgresql_host) # lint:ignore:140chars
         # Drop pglogical extension and schema (again) if present after db restore
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql --tuples-only -d '${database_names[$index]}' -c 'DROP SCHEMA IF EXISTS pglogical CASCADE;'\"",$primary_postgresql_host) # lint:ignore:140chars
         run_command("su - pe-postgres -s /bin/bash -c \"/opt/puppetlabs/server/bin/psql -d '${database_names[$index]}' -c 'DROP EXTENSION IF EXISTS pglogical CASCADE;;'\"",$primary_postgresql_host) # lint:ignore:140chars
