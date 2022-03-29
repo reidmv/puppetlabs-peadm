@@ -189,9 +189,7 @@ plan peadm::restore (
 # If we have replicas reinitalise any databases restored
   if $cluster['params']['replica_host'] {
     $database_to_restore.each |Integer $index, Boolean $value | {
-      if $database_names[$index] == 'pe-puppetdb' and $cluster['params']['replica_postgresql_host'] {
-        run_command('/opt/puppetlabs/bin/puppet-infra reinitialize replica --db pe-puppetdb -y', $cluster['params']['replica_postgresql_host'] ) # lint:ignore:140chars
-      } else {
+      if $database_names[$index] != 'pe-puppetdb' and $cluster['params']['replica_postgresql_host'] {
         run_command("/opt/puppetlabs/bin/puppet-infra reinitialize replica --db ${database_names[$index]} -y", $cluster['params']['replica_host'] ) # lint:ignore:140chars
       }
     }
