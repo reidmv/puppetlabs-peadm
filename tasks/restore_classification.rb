@@ -30,7 +30,7 @@ class RestoreClassification
 
   def restore_classification
     classification = https_client
-    classification_post = Net::HTTP::Post.new('/classifier-api/v1/import-hierarchy','Content-Type' => 'application/json')
+    classification_post = Net::HTTP::Post.new('/classifier-api/v1/import-hierarchy', 'Content-Type' => 'application/json')
     classification_post.body = File.read(@classification_file)
     classification.request(classification_post)
   end
@@ -43,4 +43,3 @@ unless ENV['RSPEC_UNIT_TEST_MODE']
   task = RestoreClassification.new(JSON.parse(STDIN.read))
   task.execute!
 end
-
