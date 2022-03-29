@@ -88,7 +88,7 @@ plan peadm::restore (
       action => 'stop',
       name   => 'pe-console-services'
     )
-    run_task('service', $servers,
+    run_task('service', $primary_host,
       action => 'stop',
       name   => 'pe-nginx'
     )
@@ -100,7 +100,7 @@ plan peadm::restore (
       action => 'stop',
       name   => 'pxp-agent'
     )
-    run_task('service', $servers,
+    run_task('service', $primary_host,
       action => 'stop',
       name   => 'pe-orchestration-services'
     )
@@ -158,7 +158,7 @@ plan peadm::restore (
   }
 
   ## Restart services
-  run_task('service', $servers,
+  run_task('service', $primary_host,
     action => 'start',
     name   => 'pe-orchestration-services'
   )
@@ -170,7 +170,7 @@ plan peadm::restore (
     action => 'start',
     name   => 'pe-puppetserver'
   )
-  run_task('service', $servers,
+  run_task('service', $primary_host,
     action => 'start',
     name   => 'pe-nginx'
   )
