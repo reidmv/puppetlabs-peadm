@@ -2,11 +2,9 @@ require 'spec_helper'
 
 describe 'peadm::restore' do
   include BoltSpec::Plans
-  let(:params) { { 'primary_host' => 'primary', 'timestamp' => '2022-03-29_16:57:41' } }
-  
+  let(:params) { { 'primary_host' => 'primary', 'backup_timestamp' => '2022-03-29_16:57:41' } }
   it 'runs with default params' do
     allow_apply
-    expect_task('peadm::get_peadm_config')
     pending('a lack of support for functions requires a workaround to be written')
     expect_task('peadm::get_peadm_config').always_return({ 'primary_postgresql_host' => 'postgres' })
     expect_out_message.with_params('# Backing up ca and ssl certificates')
