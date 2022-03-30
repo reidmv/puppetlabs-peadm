@@ -3,6 +3,7 @@ require 'spec_helper'
 describe 'peadm::restore' do
   include BoltSpec::Plans
   let(:params) { { 'primary_host' => 'primary', 'backup_timestamp' => '2022-03-29_16:57:41' } }
+
   it 'runs with default params' do
     allow_apply
     pending('a lack of support for functions requires a workaround to be written')
