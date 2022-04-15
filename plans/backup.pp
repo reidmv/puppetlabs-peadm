@@ -31,20 +31,20 @@ plan peadm::backup (
 # This is a workaround to deal with the permissions requiring us to allow pg dump to run as pe-postgres and pe-puppetdb but not wanting to
 # leave permissions open on the backup. A temporary directory is created for the dump and then the dumps are move into the main backup at
 # which point this directory is removed
-  $database_backup_directory = "${output_directory}/pe-backup-databases-${timestamp}"
+  $database_backup_directory = "${backup_directory}/databases"
   # Create backup folder
   apply($primary_host){
     file { $backup_directory :
       ensure => 'directory',
       owner  => 'root',
       group  => 'root',
-      mode   => '0770'
+      mode   => '0751'
     }
     file { $database_backup_directory :
       ensure => 'directory',
-      owner  => 'pe-puppetdb',
-      group  => 'pe-postgres',
-      mode   => '0770'
+      owner  => 'pe-postgres',
+      group  => 'root',
+      mode   => '0750'
     }
   }
 
