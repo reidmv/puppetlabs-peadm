@@ -48,7 +48,7 @@ plan peadm::backup (
       ensure => 'directory',
       owner  => 'root',
       group  => 'root',
-      mode   => '0750'
+      mode   => '0700'
     }
 
     # Create a subdir for each backup type selected
@@ -57,7 +57,7 @@ plan peadm::backup (
         ensure => 'directory',
         owner  => 'root',
         group  => 'root',
-        mode   => '0750'
+        mode   => '0700'
       }
     }
   }
@@ -94,12 +94,12 @@ plan peadm::backup (
       | CMD
   }
 
-  $backup_databases.each |$name,$target| {
+  $backup_databases.each |$name,$database_target| {
     run_command(@("CMD"/L), $primary_target)
       /opt/puppetlabs/server/bin/pg_dump -Fd -Z3 -j4 \
         -f ${shellquote($backup_directory)}/${shellquote($name)}/pe-${shellquote($name)}.dump.d \
         "sslmode=verify-ca \
-         host=${shellquote($target.peadm::certname())} \
+         host=${shellquote($database_target.peadm::certname())} \
          user=pe-${shellquote($name)} \
          sslcert=/etc/puppetlabs/puppetdb/ssl/${shellquote($primary_target.peadm::certname())}.cert.pem \
          sslkey=/etc/puppetlabs/puppetdb/ssl/${shellquote($primary_target.peadm::certname())}.private_key.pem \
@@ -108,5 +108,11 @@ plan peadm::backup (
       | CMD
   }
 
-  return({'path' => $backup_directory})
+  run_command(@("CMD"/L), $primary_target)
+    umask 0077 \
+      && tar -czf ${shellquote($backup_directory)}.tar.gz ${shellquote($backup_directory)} \
+      && rm -rf ${shellquote($backup_directory)}
+    | CMD
+
+  return({'path' => "${backup_directory}.tar.gz"})
 }
